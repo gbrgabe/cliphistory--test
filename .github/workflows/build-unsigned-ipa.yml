@@ -20,14 +20,26 @@ jobs:
       - name: Checkout do código
         uses: actions/checkout@v4
 
+      - name: Selecionar a versão mais recente do Xcode disponível no runner
+        # O runner tem várias versões do Xcode instaladas lado a lado; o symlink
+        # /Applications/Xcode.app nem sempre aponta pra mais recente. O XcodeGen
+        # gera o .pbxproj num formato que pode ser mais novo do que essa versão
+        # "padrão" suporta (erro "future Xcode project file format"), então
+        # selecionamos explicitamente a mais recente disponível.
+        run: |
+          LATEST_XCODE=$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -1)
+          if [ -z "$LATEST_XCODE" ]; then
+            LATEST_XCODE="/Applications/Xcode.app"
+          fi
+          echo "Selecionando: $LATEST_XCODE"
+          sudo xcode-select -s "$LATEST_XCODE"
+          xcodebuild -version
+
       - name: Instalar XcodeGen
         run: brew install xcodegen
 
       - name: Gerar projeto Xcode via XcodeGen
         run: xcodegen generate
-
-      - name: Selecionar versão do Xcode
-        run: sudo xcode-select -s /Applications/Xcode.app
 
       - name: Mostrar schemes disponíveis (debug)
         run: xcodebuild -list -project "${PROJECT_NAME}.xcodeproj" || xcodebuild -list -workspace "${PROJECT_NAME}.xcworkspace"
