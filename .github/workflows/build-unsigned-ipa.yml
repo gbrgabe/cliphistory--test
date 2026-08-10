@@ -1,0 +1,66 @@
+name: Build unsigned IPA
+
+# Roda a cada push na main e também pode ser disparado manualmente
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+jobs:
+  build:
+    # Runner macOS — grátis e sem limite de minutos em repositório público
+    runs-on: macos-14
+
+    env:
+      # AJUSTE ESTES DOIS VALORES conforme o nome real do seu projeto/scheme
+      PROJECT_NAME: ClipHistory
+      SCHEME_NAME: ClipHistory
+
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Instalar XcodeGen
+        run: brew install xcodegen
+
+      - name: Gerar projeto Xcode via XcodeGen
+        run: xcodegen generate
+
+      - name: Selecionar versão do Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app
+
+      - name: Mostrar schemes disponíveis (debug)
+        run: xcodebuild -list -project "${PROJECT_NAME}.xcodeproj" || xcodebuild -list -workspace "${PROJECT_NAME}.xcworkspace"
+
+      - name: Build sem assinatura (device genérico)
+        run: |
+          xcodebuild \
+            -project "${PROJECT_NAME}.xcodeproj" \
+            -scheme "${SCHEME_NAME}" \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            AD_HOC_CODE_SIGNING_ALLOWED=YES \
+            clean build
+
+      - name: Empacotar .app em .ipa (sem assinar)
+        run: |
+          set -e
+          APP_PATH=$(find build/Build/Products -maxdepth 2 -name "*.app" -print -quit)
+          echo "App encontrado em: $APP_PATH"
+
+          mkdir -p Payload
+          cp -R "$APP_PATH" Payload/
+          zip -r "${PROJECT_NAME}-unsigned.ipa" Payload
+          rm -rf Payload
+
+      - name: Subir .ipa como artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ipa-nao-assinado
+          path: "${{ env.PROJECT_NAME }}-unsigned.ipa"
+          retention-days: 14

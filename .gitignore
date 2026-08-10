@@ -1,0 +1,46 @@
+# === Segredos / assinatura — NUNCA versionar ===
+*.p12
+*.mobileprovision
+*.cer
+*.certSigningRequest
+*.pem
+ExportOptions.plist
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+.env
+.env.*
+secrets.yml
+
+# === Xcode ===
+build/
+DerivedData/
+*.xcuserstate
+*.xcuserdatad/
+*.xccheckout
+*.xcscmblueprint
+xcuserdata/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# === Swift Package Manager ===
+.build/
+Packages/
+Package.resolved
+
+# === XcodeGen (se usado) ===
+*.xcodeproj/
+!default.xcodeproj
+
+# === macOS ===
+.DS_Store
+
+# === CocoaPods (se um dia usar) ===
+Pods/
+
+# === Ferramentas locais ===
+.claude/

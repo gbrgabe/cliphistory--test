@@ -1,0 +1,56 @@
+name: ClipHistory
+options:
+  deploymentTarget:
+    iOS: "16.0"
+  createIntermediateGroups: true
+  developmentLanguage: pt-BR
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    TARGETED_DEVICE_FAMILY: "1"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    ENABLE_PREVIEWS: YES
+
+targets:
+  ClipHistory:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+      - path: Shared
+    resources:
+      - path: App/Assets.xcassets
+    entitlements:
+      path: App/ClipHistory.entitlements
+    info:
+      path: App/Info.plist
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mae.cliphistory
+        PRODUCT_NAME: ClipHistory
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+    dependencies:
+      - target: ClipHistoryKeyboard
+        embed: true
+    scheme:
+      shared: true
+      testTargets: []
+
+  ClipHistoryKeyboard:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: KeyboardExtension
+      - path: Shared
+    entitlements:
+      path: KeyboardExtension/ClipHistoryKeyboard.entitlements
+    info:
+      path: KeyboardExtension/Info.plist
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mae.cliphistory.keyboard
+        PRODUCT_NAME: ClipHistoryKeyboard
+        SKIP_INSTALL: YES
