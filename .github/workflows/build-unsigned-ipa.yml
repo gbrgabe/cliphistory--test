@@ -63,12 +63,46 @@ jobs:
         run: |
           set -e
           APP_PATH=$(find build/Build/Products -maxdepth 2 -name "*.app" -print -quit)
+          if [ -z "$APP_PATH" ]; then
+            echo "Nenhum .app encontrado em build/Build/Products — build não produziu o app esperado."
+            find build/Build/Products -maxdepth 3
+            exit 1
+          fi
           echo "App encontrado em: $APP_PATH"
 
           mkdir -p Payload
           cp -R "$APP_PATH" Payload/
           zip -r "${PROJECT_NAME}-unsigned.ipa" Payload
           rm -rf Payload
+
+      - name: Verificar estrutura do .ipa gerado (debug)
+        run: |
+          set -e
+          IPA="${PROJECT_NAME}-unsigned.ipa"
+          echo "== Conteúdo do $IPA =="
+          unzip -l "$IPA"
+
+          # Deriva o diretório do .app a partir do Info.plist (entrada de arquivo real),
+          # em vez de depender de entradas de diretório existirem explicitamente no zip.
+          APP_DIR=$(unzip -Z1 "$IPA" | grep -E '^Payload/[^/]+\.app/Info\.plist$' | head -1 | sed -E 's#(Payload/[^/]+\.app/).*#\1#')
+          if [ -z "$APP_DIR" ]; then
+            echo "ERRO: não encontrei Payload/<Nome>.app/Info.plist dentro do .ipa — é exatamente isso que o AltServer/SideStore precisa achar."
+            exit 1
+          fi
+          echo "App dentro do ipa: $APP_DIR"
+
+          rm -rf ipa_check
+          unzip -q "$IPA" -d ipa_check "${APP_DIR}Info.plist"
+          EXECUTABLE=$(/usr/libexec/PlistBuddy -c "Print :CFBundleExecutable" "ipa_check/${APP_DIR}Info.plist")
+          echo "CFBundleExecutable: $EXECUTABLE"
+
+          unzip -q "$IPA" -d ipa_check "${APP_DIR}${EXECUTABLE}"
+          if [ ! -f "ipa_check/${APP_DIR}${EXECUTABLE}" ]; then
+            echo "ERRO: o binário $EXECUTABLE declarado no Info.plist não existe dentro do bundle."
+            exit 1
+          fi
+          file "ipa_check/${APP_DIR}${EXECUTABLE}"
+          echo "OK: .ipa parece estruturalmente válido."
 
       - name: Subir .ipa como artifact
         uses: actions/upload-artifact@v4
